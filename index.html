@@ -1,0 +1,558 @@
+<!DOCTYPE html>
+<html lang="th">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>SCRAPGRID — Modular Tank &amp; Drivetrain Physics</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:ital,wght@0,400;0,600;0,700;1,700&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/src/style.css" />
+  </head>
+  <body class="mode-garage">
+    <div id="canvas-container"></div>
+
+    <!-- Top Header Bar -->
+    <header id="hud-top">
+      <div class="brand-box">
+        <div class="brand-badge" id="app-mode-badge">🛠️ GARAGE MODE</div>
+        <h1>SCRAP<span>GRID</span></h1>
+        <p class="subtitle">Modular Tank Builder &bull; WASD+QE Track Physics</p>
+      </div>
+
+      <!-- Main Action: Toggle Mode -->
+      <div class="mode-actions">
+        <button id="btn-mode-toggle" class="mode-switch-btn" title="Toggle Mode [TAB]">
+          <span class="mode-btn-icon" id="mode-icon">🏎️</span>
+          <div class="mode-btn-text">
+            <strong id="mode-label">TEST DRIVE</strong>
+            <small>Press [TAB]</small>
+          </div>
+        </button>
+      </div>
+
+      <!-- Quick Actions -->
+      <div class="header-tools">
+        <button id="btn-toggle-shadows" class="tool-btn" title="Toggle Shadows (ON/OFF) [U]">
+          <span id="shadow-btn-label">💡 Shadow: OFF</span>
+        </button>
+        <button id="btn-save-blueprint" class="tool-btn" title="Save Blueprint directly into project blueprints/ folder [Ctrl+S]">
+          <span>💾 Save JSON</span>
+        </button>
+        <button id="btn-open-blueprint-list" class="tool-btn" title="Open saved blueprints from project blueprints/ folder">
+          <span>📁 Saved Blueprints</span>
+        </button>
+        <label id="btn-load-blueprint-label" class="tool-btn" title="Import external Blueprint JSON file" style="cursor: pointer; display: inline-flex; align-items: center;">
+          <span>📂 Import JSON</span>
+          <input type="file" id="input-load-json" accept=".json,application/json" style="display: none;" />
+        </label>
+        <button id="btn-load-default" class="tool-btn" title="Load Modular Starter Chassis">
+          <span>🔄 Starter Chassis</span>
+        </button>
+        <button id="btn-clear-grid" class="tool-btn danger" title="Clear All Blocks">
+          <span>🗑️ Clear</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- Left Panel: Live Diagnostics -->
+    <aside id="hud-left" class="hud-panel">
+      <div class="panel-header">
+        <span class="status-dot"></span>
+        <h2>VEHICLE TELEMETRY</h2>
+      </div>
+
+      <div class="stat-grid">
+        <div class="stat-item">
+          <label>TOTAL MASS</label>
+          <span id="stat-mass">0 kg</span>
+        </div>
+        <div class="stat-item">
+          <label>BLOCKS</label>
+          <span id="stat-blocks">0 pcs</span>
+        </div>
+        <div class="stat-item">
+          <label>ENGINES</label>
+          <span id="stat-engines">0x Core</span>
+        </div>
+        <div class="stat-item">
+          <label>TRACKS</label>
+          <span id="stat-tracks">0 Units</span>
+        </div>
+        <div class="stat-item">
+          <label>AA WEAPONS</label>
+          <span id="stat-weapons" style="color:#ffbe2e">0 Flak</span>
+        </div>
+      </div>
+
+      <div class="divider"></div>
+
+      <div class="panel-subheader">DRIVETRAIN STATUS</div>
+      <div class="drive-status-box">
+        <div class="status-row">
+          <span>Engine Output:</span>
+          <strong id="stat-power">0 kW</strong>
+        </div>
+        <div class="status-row">
+          <span>Power / Weight:</span>
+          <strong id="stat-pw-ratio" style="color:#38e578">0 HP/t</strong>
+        </div>
+        <div class="status-row">
+          <span>Est. Top Speed:</span>
+          <strong id="stat-top-speed" style="color:#0ea5e9">0 km/h</strong>
+        </div>
+        <div class="status-row">
+          <span>Braking Mode:</span>
+          <strong id="stat-brake-mode" style="color:#38e578">Auto-Brake Ready</strong>
+        </div>
+        <div class="status-row">
+          <span>Cockpit Check:</span>
+          <strong id="stat-cockpit-check" style="color:#38e578">OK (1/1)</strong>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Right Panel: Controls Guide -->
+    <aside id="hud-right" class="hud-panel">
+      <div class="panel-header">
+        <h2 id="guide-title">GARAGE CONTROLS</h2>
+      </div>
+
+      <div class="controls-guide">
+        <ul id="guide-list">
+          <li><kbd>1</kbd> - <kbd>8</kbd> Select Lego Shapes & Modules</li>
+          <li><kbd>R</kbd> / <kbd>F</kbd> / <kbd>C</kbd> Rotate Yaw (หัน), Pitch (ก้ม/เงย), Roll (ตะแคงซ้าย/ขวา)</li>
+          <li><kbd>G</kbd> Cycle Grid Snap (50cm / 25cm / 12.5cm)</li>
+          <li><kbd>[</kbd> / <kbd>]</kbd> Adjust Track Length (Auto-stretches floor)</li>
+          <li><kbd>L-CLICK</kbd> Place / <kbd>R-CLICK</kbd> Delete</li>
+          <li><kbd>DRAG</kbd> Orbit 3D Build Platform</li>
+          <li><kbd>M</kbd> Toggle Mirror Symmetry</li>
+          <li><kbd>T</kbd> Toggle Track Tension (Taut/Realistic/Slack)</li>
+          <li><kbd>Ctrl+S</kbd> Save Blueprint to JSON</li>
+          <li><kbd>TAB</kbd> Switch to Test Drive &amp; Fire!</li>
+        </ul>
+      </div>
+
+      <div class="divider"></div>
+      <button id="btn-recover" class="action-btn">
+        <span>[R] Recover / Flip Upright</span>
+      </button>
+    </aside>
+
+    <!-- Garage Build Palette (Bottom Center in Garage Mode) -->
+    <div id="garage-palette-bar" class="palette-container">
+      <!-- Category Tabs (Requirement 1: จัดหมวดหมู่ของวัตถุ ไม่ต้องโชว์ทุกอย่าง ให้ผู้ใช้เปิดเลือกตามหมวด) -->
+      <div class="palette-category-tabs">
+        <button class="cat-tab active" data-cat="ARMOR">🛡️ เกราะ &amp; ตัวถัง</button>
+        <button class="cat-tab" data-cat="MOBILITY">⚙️ ช่วงล่าง &amp; ล้อ</button>
+        <button class="cat-tab" data-cat="POWERTRAIN">⚡ เครื่องยนต์</button>
+        <button class="cat-tab" data-cat="WEAPONS">🎯 อาวุธ &amp; ป้อม</button>
+        <button class="cat-tab" data-cat="CORE">🕹️ ห้องควบคุม</button>
+      </div>
+
+      <div class="palette-blocks">
+        <!-- Category: ARMOR -->
+        <button class="block-tile active" data-cat="ARMOR" data-shape="CUBE" data-type="CHASSIS" title="บล็อกลูกบาศก์เหล็กเกราะ 50x50x50 cm (RHA 981 kg) [1]">
+          <span class="tile-key">1</span>
+          <div class="tile-icon cube-icon"></div>
+          <span class="tile-name">Cube</span>
+          <small class="tile-stat">981 kg</small>
+        </button>
+        <button class="block-tile" data-cat="ARMOR" data-shape="PLATE_25" data-type="CHASSIS" title="แผ่นเกราะ 50x50 cm หนา 25 cm (250 mm RHA 491 kg) [2]">
+          <span class="tile-key">2</span>
+          <div class="tile-icon plate-icon" style="height: 14px;"></div>
+          <span class="tile-name">Plate ½</span>
+          <small class="tile-stat">491 kg</small>
+        </button>
+        <button class="block-tile" data-cat="ARMOR" data-shape="PLATE_12" data-type="CHASSIS" title="แผ่นเกราะ 50x50 cm หนา 12.5 cm (125 mm RHA 245 kg) [3]">
+          <span class="tile-key">3</span>
+          <div class="tile-icon plate-icon" style="height: 8px;"></div>
+          <span class="tile-name">Plate ¼</span>
+          <small class="tile-stat">245 kg</small>
+        </button>
+        <button class="block-tile" data-cat="ARMOR" data-shape="PLATE" data-type="CHASSIS" title="แผ่นเกราะบาง 50x50 cm หนา 8 cm (80 mm RHA 157 kg) [4]">
+          <span class="tile-key">4</span>
+          <div class="tile-icon plate-icon" style="height: 5px;"></div>
+          <span class="tile-name">Plate 8cm</span>
+          <small class="tile-stat">157 kg</small>
+        </button>
+        <button class="block-tile" data-cat="ARMOR" data-shape="SLOPE_45" data-type="CHASSIS" title="เกราะลาดเอียง 45 องศา (RHA 491 kg) [5]">
+          <span class="tile-key">5</span>
+          <div class="tile-icon slope45-icon"></div>
+          <span class="tile-name">Slope 45°</span>
+          <small class="tile-stat">491 kg</small>
+        </button>
+        <button class="block-tile" data-cat="ARMOR" data-shape="SLOPE_30" data-type="CHASSIS" title="เกราะลาดเอียง 30 องศา Tiger II Front Glacis (RHA 285 kg) [6]">
+          <span class="tile-key">6</span>
+          <div class="tile-icon slope30-icon"></div>
+          <span class="tile-name">Slope 30°</span>
+          <small class="tile-stat">285 kg</small>
+        </button>
+        <button class="block-tile" data-cat="ARMOR" data-shape="CORNER_WEDGE" data-type="CHASSIS" title="ลิ่มมุมเกราะพีระมิด (RHA 165 kg) [7]">
+          <span class="tile-key">7</span>
+          <div class="tile-icon wedge-icon"></div>
+          <span class="tile-name">Corner</span>
+          <small class="tile-stat">165 kg</small>
+        </button>
+        <button class="block-tile" data-cat="ARMOR" data-shape="BEAM" data-type="CHASSIS" title="คานเหล็กโครงสร้างแชสซี (RHA 245 kg) [8]">
+          <span class="tile-key">8</span>
+          <div class="tile-icon beam-icon"></div>
+          <span class="tile-name">Beam</span>
+          <small class="tile-stat">245 kg</small>
+        </button>
+
+        <!-- Category: WEAPONS -->
+        <button class="block-tile hidden" data-cat="WEAPONS" data-shape="TURRET_RING" data-type="TURRET" title="วงแหวนรางหมุนป้อมปืนเหล็กหล่อฟอร์จ (650 kg) [1]">
+          <span class="tile-key">1</span>
+          <div class="tile-icon turret-icon"></div>
+          <span class="tile-name">Turret Ring</span>
+          <small class="tile-stat">650 kg</small>
+        </button>
+        <button class="block-tile highlight-weapon hidden" data-cat="WEAPONS" data-shape="FLAK_44" data-type="WEAPON" title="ปืนใหญ่ต่อสู้อากาศยาน 3.7cm Flakzwilling 44 (950 kg) [2]">
+          <span class="tile-key">2</span>
+          <div class="tile-icon flak-icon"></div>
+          <span class="tile-name">Flak 44</span>
+          <small class="tile-stat">950 kg</small>
+        </button>
+        <button class="block-tile highlight-weapon hidden" data-cat="WEAPONS" data-shape="FLAK_41" data-type="WEAPON" title="ปืนใหญ่หนัก 8.8cm Flak 41 L/74 ลำกล้องยาว 6.51 เมตร (2,600 kg) อำนาจทำลายล้างมหาศาล [3]">
+          <span class="tile-key">3</span>
+          <div class="tile-icon flak41-icon"></div>
+          <span class="tile-name">Flak 41 L/74</span>
+          <small class="tile-stat">2.6 t / 6.5m</small>
+        </button>
+
+        <!-- Category: CORE -->
+        <button class="block-tile hidden" data-cat="CORE" data-shape="CUBE" data-type="COCKPIT" title="ห้องคนขับเกราะหนา Command Cockpit (350 kg) [1]">
+          <span class="tile-key">1</span>
+          <div class="tile-icon cockpit-icon"></div>
+          <span class="tile-name">Cockpit</span>
+          <small class="tile-stat">350 kg</small>
+        </button>
+
+        <!-- Category: POWERTRAIN -->
+        <button class="block-tile hidden" data-cat="POWERTRAIN" data-shape="CUBE" data-type="ENGINE" title="เครื่องยนต์ Maybach HL 230 V-12 (700 HP, 1,200 kg) [1]">
+          <span class="tile-key">1</span>
+          <div class="tile-icon engine-icon"></div>
+          <span class="tile-name">V12 Engine</span>
+          <small class="tile-stat">1.2 t / 700HP</small>
+        </button>
+
+        <!-- Category: MOBILITY -->
+        <button class="block-tile hidden" data-cat="MOBILITY" data-type="TRACK_UNIT" title="ล้อสายพาน King Tiger Schachtellaufwerk (180 kg/บล็อก) [1]">
+          <span class="tile-key">1</span>
+          <div class="tile-icon track-icon"></div>
+          <span class="tile-name">Tiger Tracks</span>
+          <small class="tile-stat">180 kg/u</small>
+        </button>
+      </div>
+
+      <!-- King Tiger Track Length, Tension & Grid Configurator -->
+      <div id="track-length-bar" class="track-length-bar">
+        <div class="track-len-info">
+          <span class="track-len-badge">🐅 TIGER II TRACK</span>
+          <span class="track-len-badge" style="background: rgba(44, 230, 255, 0.15); border-color: rgba(44, 230, 255, 0.4); color: #2ce6ff;">🛠️ AUTO-FLOOR</span>
+          <span class="track-len-label">LENGTH:</span>
+          <button id="btn-track-len-dec" class="track-step-btn" title="Shorten Track [ [ ]">−</button>
+          <strong id="track-len-val">13 BLOCKS (650 cm)</strong>
+          <button id="btn-track-len-inc" class="track-step-btn" title="Lengthen Track [ ] ]">+</button>
+        </div>
+        <div class="track-len-chips">
+          <button class="track-chip" data-len="6">6 (300 cm)</button>
+          <button class="track-chip" data-len="8">8 (400 cm)</button>
+          <button class="track-chip" data-len="10">10 (500 cm)</button>
+          <button class="track-chip" data-len="12">12 (600 cm)</button>
+          <button class="track-chip active" data-len="13">13 (650 cm)</button>
+          <button class="track-chip" data-len="15">15 (750 cm)</button>
+        </div>
+
+        <div class="track-divider-v"></div>
+
+        <!-- Track Tension Presets -->
+        <div class="track-tension-info">
+          <span class="track-len-label">TENSION [T]:</span>
+          <div class="track-tension-chips">
+            <button class="track-tension-chip" data-tension="TAUT" title="Tight Mechanical Tension (0 mm Sag) [T]">⚡ TAUT</button>
+            <button class="track-tension-chip active" data-tension="REALISTIC" title="Realistic Heavy Sag (7 mm Droop) [T]">🛡️ REALISTIC</button>
+            <button class="track-tension-chip" data-tension="SLACK" title="Loose Gravity Sag (22 mm Sag) [T]">⚓ SLACK</button>
+          </div>
+        </div>
+
+        <div class="track-divider-v"></div>
+
+        <!-- Grid Snapping Selector (cm) -->
+        <div class="grid-snap-info" style="display: flex; align-items: center; gap: 6px;">
+          <span class="track-len-label">GRID [G]:</span>
+          <div class="grid-snap-chips" style="display: flex; align-items: center; gap: 4px;">
+            <button class="track-tension-chip grid-chip active" data-snap="0.5" title="Standard 50cm (1x Block) [G]">50 cm (1x)</button>
+            <button class="track-tension-chip grid-chip" data-snap="0.25" title="Fine 25cm (½ Block) [G]">25 cm (½)</button>
+            <button class="track-tension-chip grid-chip" data-snap="0.125" title="Micro 12.5cm (¼ Block) [G]">12.5 cm (¼)</button>
+          </div>
+        </div>
+
+        <div class="track-divider-v"></div>
+
+        <!-- 3D Spatial Grid Toggle -->
+        <button id="btn-toggle-3dgrid" class="track-tension-chip active" title="Toggle 3D Spatial Grid Lines [H]" style="border-color:#38bdf8; color:#38bdf8;">
+          <span id="btn-3dgrid-text">🔲 3D Grid [H]: <b>ON</b></span>
+        </button>
+
+        <div class="track-divider-v"></div>
+
+        <!-- Lift / Lower Vehicle Elevation (Lift Stand) -->
+        <div class="lift-vehicle-group" style="display: flex; align-items: center; gap: 4px;">
+          <span class="track-len-label">LIFT [PgUp/Dn]:</span>
+          <button id="btn-lift-vehicle" class="track-tension-chip" title="Lift Entire Vehicle Up by +50cm [PageUp]">⬆️ ยกขึ้น</button>
+          <button id="btn-lower-vehicle" class="track-tension-chip" title="Lower Entire Vehicle Down by -50cm [PageDown]">⬇️ ลดลง</button>
+        </div>
+      </div>
+
+      <div class="palette-tools">
+        <!-- Tool Mode Switcher (Place vs Select & Edit) -->
+        <div class="tool-mode-group" style="display: flex; align-items: center; gap: 5px;">
+          <button id="btn-mode-place" class="tool-btn active mode-active" title="Build & Place Blocks [V]">
+            <span>🔨 โหมดวาง [V]</span>
+          </button>
+          <button id="btn-mode-select" class="tool-btn" title="Select, Move, Rotate & Stretch Placed Blocks [V]">
+            <span>✋ เลือก/แก้ไข [V]</span>
+          </button>
+        </div>
+
+        <div class="track-divider-v"></div>
+
+        <button id="btn-rotate-shape" class="tool-btn highlight" title="Rotate Active Shape 90° [R]">
+          <span>🔄 หมุน [R]: <b id="shape-rot-val">0°</b></span>
+        </button>
+        <button id="btn-pitch-shape" class="tool-btn highlight" title="Pitch / Tilt Upward 90° [F]">
+          <span>⤹ ก้ม/เงย [F]: <b id="shape-pitch-val">0°</b></span>
+        </button>
+        <button id="btn-roll-shape" class="tool-btn highlight" title="Roll / ตะแคงชิดซ้าย-ขวา 90° [C]">
+          <span>↩️ ตะแคง [C]: <b id="shape-roll-val">0°</b></span>
+        </button>
+        <button id="btn-flip-shape" class="tool-btn" title="Flip Invert Upside Down (180°)">
+          <span>⬆️ หงายขึ้น</span>
+        </button>
+        <button id="btn-symmetry" class="tool-btn active" title="Toggle Mirror Symmetry (M)">
+          <span>🪞 สมมาตร [M]: <b id="sym-status">ON</b></span>
+        </button>
+        <span class="palette-hint">คลิก: วาง/เลือก &bull; ขวา: ลบ &bull; R/F/C: หมุน/ก้มเงย/ตะแคงซ้ายขวา &bull; V: สลับโหมด &bull; TAB: ทดสอบ</span>
+      </div>
+    </div>
+
+    <!-- Floating Block Inspector & Transformer (Move / Rotate / Stretch / Resize) -->
+    <div id="block-inspector" class="block-inspector hidden">
+      <div class="inspector-header">
+        <div class="inspector-title-wrap">
+          <span class="inspector-badge">EDIT</span>
+          <strong id="inspector-name">Selected Block</strong>
+        </div>
+        <button id="btn-inspector-close" class="inspector-close-btn" title="Deselect [Esc]">✕</button>
+      </div>
+      <div class="inspector-coords" id="inspector-coords">X: 0.00 | Y: 1.00 | Z: 0.00</div>
+
+      <!-- Move Controls (Requirement 2.1) -->
+      <div class="inspector-section">
+        <span class="inspector-sec-title">🕹️ เลื่อนตำแหน่ง (MOVE)</span>
+        <div class="inspector-btn-grid">
+          <button class="insp-btn" id="btn-move-left" title="Move Left (X-)">◀ ซ้าย</button>
+          <button class="insp-btn" id="btn-move-right" title="Move Right (X+)">ขวา ▶</button>
+          <button class="insp-btn" id="btn-move-fwd" title="Move Forward (Z+)">▲ หน้า</button>
+          <button class="insp-btn" id="btn-move-back" title="Move Back (Z-)">หลัง ▼</button>
+          <button class="insp-btn" id="btn-move-up" title="Move Up (Y+)">⬆ ขึ้น</button>
+          <button class="insp-btn" id="btn-move-down" title="Move Down (Y-)">⬇ ลง</button>
+        </div>
+      </div>
+
+      <!-- Rotate Controls (Requirement 2.1: ยกเว้นชุดล้อที่ห้ามหมุน) -->
+      <div class="inspector-section" id="inspector-rotate-sec">
+        <span class="inspector-sec-title">🔄 หมุนองศา (ROTATE)</span>
+        <div id="inspector-rotate-controls" class="inspector-btn-grid">
+          <button class="insp-btn" id="btn-rot-yaw" title="Rotate Yaw (Y-axis 90°)">↻ ซ้าย/ขวา (Y)</button>
+          <button class="insp-btn" id="btn-rot-pitch" title="Rotate Pitch (X-axis 90°)">⤹ ก้ม/เงย (X)</button>
+          <button class="insp-btn" id="btn-rot-roll" title="Rotate Roll / ตะแคงซ้าย-ขวา (Z-axis 90°)">⤿ ตะแคง (Z)</button>
+        </div>
+        <div id="inspector-rotate-locked" class="inspector-lock-badge hidden">
+          🔒 ชุดล้อสายพานล็อกแนวตรง (ห้ามหมุน)
+        </div>
+      </div>
+
+      <!-- Stretch / Extrude Controls (Requirement 2.3: ยืดหดบล็อกได้ เช่นดึงไปทางซ้ายเพื่อเพิ่มเป็นสองบล็อก) -->
+      <div class="inspector-section" id="inspector-stretch-sec">
+        <span class="inspector-sec-title">↔️ ยืดหดบล็อก (EXTRUDE / STRETCH)</span>
+        <div class="inspector-btn-grid">
+          <button class="insp-btn stretch-btn" id="btn-stretch-left" title="Extend Left (-X)">◀ ยืดซ้าย</button>
+          <button class="insp-btn stretch-btn" id="btn-stretch-right" title="Extend Right (+X)">ยืดขวา ▶</button>
+          <button class="insp-btn stretch-btn" id="btn-stretch-fwd" title="Extend Forward (+Z)">▲ ยืดหน้า</button>
+          <button class="insp-btn stretch-btn" id="btn-stretch-back" title="Extend Back (-Z)">ยืดหลัง ▼</button>
+          <button class="insp-btn stretch-btn" id="btn-stretch-up" title="Extend Up (+Y)">⬆ ยืดขึ้น</button>
+          <button class="insp-btn stretch-btn" id="btn-stretch-down" title="Extend Down (-Y)">⬇ ยืดลง</button>
+        </div>
+      </div>
+
+      <!-- Inline Track Size Configurator (Requirement 2.2: ปรับเปลี่ยนขนาดล้อได้ตรงนั้นเลย) -->
+      <div class="inspector-section hidden" id="inspector-track-sec">
+        <span class="inspector-sec-title">🐅 ปรับขนาดล้อตรงนี้ (TRACK RESIZE)</span>
+        <div class="inspector-track-row">
+          <button class="insp-btn" id="btn-insp-track-dec" title="Shorten Track (−0.5m)">− หดล้อ</button>
+          <strong id="insp-track-len-val">13 BLOCKS (6.5m)</strong>
+          <button class="insp-btn" id="btn-insp-track-inc" title="Lengthen Track (+0.5m)">+ ยืดล้อ</button>
+        </div>
+      </div>
+
+      <div class="inspector-footer">
+        <button id="btn-inspector-delete" class="insp-btn-danger">🗑️ ลบบล็อกนี้ [Del]</button>
+      </div>
+    </div>
+
+    <!-- War Thunder Mouse-Aim & Dual Reticle System -->
+    <div id="wt-aim-system" class="wt-aim-system">
+      <!-- Dynamic SVG Lead / Traverse Line -->
+      <svg id="wt-lead-svg" class="wt-lead-svg">
+        <line id="wt-lead-line" x1="0" y1="0" x2="0" y2="0" stroke="rgba(255, 190, 46, 0.45)" stroke-width="1.5" stroke-dasharray="3,3" />
+      </svg>
+
+      <!-- 1. Mouse Aim Cursor (Player Sight Target) -->
+      <div id="wt-mouse-aim" class="wt-mouse-aim">
+        <div class="aim-ring"></div>
+        <div class="aim-dot"></div>
+        <div class="aim-tick tick-n"></div>
+        <div class="aim-tick tick-s"></div>
+        <div class="aim-tick tick-w"></div>
+        <div class="aim-tick tick-e"></div>
+      </div>
+
+      <!-- 2. Actual Gun Laying Reticle (Physical Gun Barrel Direction) -->
+      <div id="wt-gun-reticle" class="wt-gun-reticle traversing">
+        <div class="gun-crosshair">
+          <div class="gun-line gun-top"></div>
+          <div class="gun-line gun-bottom"></div>
+          <div class="gun-line gun-left"></div>
+          <div class="gun-line gun-right"></div>
+          <div class="gun-center-gap"></div>
+        </div>
+        <div id="wt-gun-status-label" class="gun-status-label">TRAVERSING</div>
+      </div>
+
+      <!-- 3. Free Look Indicator Badge -->
+      <div id="wt-free-look-badge" class="wt-free-look-badge hidden">
+        👁️ FREE LOOK <small>[TURRET LOCKED]</small>
+      </div>
+
+      <!-- 4. Mouse Pointer Lock Prompt Badge -->
+      <div id="wt-pointer-lock-prompt" class="wt-pointer-lock-prompt hidden">
+        🎯 CLICK TO LOCK MOUSE AIM <small>[ESC to Unlock]</small>
+      </div>
+    </div>
+
+    <!-- 5. Sniper / Gunner Sight View Overlay (War Thunder Tank Periscope) -->
+    <div id="wt-sniper-overlay" class="wt-sniper-overlay hidden">
+      <div class="sniper-vignette"></div>
+      <div class="sniper-reticle-box">
+        <!-- Vertical ballistic drop ladder & mil graduations -->
+        <div class="sniper-center-cross">
+          <div class="sc-cross-v"></div>
+          <div class="sc-cross-h"></div>
+        </div>
+        <div class="sniper-drop-scale">
+          <div class="drop-line" style="top: 25px;"><span class="drop-lbl">200m</span></div>
+          <div class="drop-line" style="top: 50px;"><span class="drop-lbl">400m</span></div>
+          <div class="drop-line" style="top: 75px;"><span class="drop-lbl">600m</span></div>
+          <div class="drop-line" style="top: 100px;"><span class="drop-lbl">800m</span></div>
+          <div class="drop-line" style="top: 130px;"><span class="drop-lbl">1000m</span></div>
+        </div>
+        <!-- Stadiametric Rangefinder & Target Telemetry -->
+        <div class="sniper-data-readout">
+          <div class="sniper-data-item">
+            <span class="sd-label">RANGE</span>
+            <strong id="sniper-range-val">000 m</strong>
+          </div>
+          <div class="sniper-data-item">
+            <span class="sd-label">OPTIC</span>
+            <strong id="sniper-zoom-val">4.0x</strong>
+          </div>
+          <div class="sniper-data-item">
+            <span class="sd-label">CANNON</span>
+            <strong id="sniper-cannon-val" style="color: #ffbe2e;">FLAK 41</strong>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Drive Mode Bottom HUD (Bottom Center in Drive Mode) -->
+    <footer id="hud-bottom">
+      <div class="gauge-cluster">
+        <!-- Track Differential Power Indicator -->
+        <div class="track-power-widget" title="Left / Right Track Power">
+          <div class="track-bar-col">
+            <span class="track-lbl">L</span>
+            <div class="track-bar-bg"><div id="trk-bar-l" class="track-bar-fill"></div></div>
+          </div>
+          <div class="tank-icon-center"></div>
+          <div class="track-bar-col">
+            <span class="track-lbl">R</span>
+            <div class="track-bar-bg"><div id="trk-bar-r" class="track-bar-fill"></div></div>
+          </div>
+        </div>
+
+        <!-- Speedometer -->
+        <div class="speed-box">
+          <span id="hud-speed">0</span>
+          <small>KM/H</small>
+        </div>
+
+        <!-- Weapon Status Badge -->
+        <div id="hud-weapon-badge" class="weapon-hud-badge" title="Flak 44 AA Guns [Left-Click / Space]">
+          💥 <span id="hud-weapon-status">FLAK 44 READY</span>
+        </div>
+
+        <!-- Auto-Braking Status Badge -->
+        <div id="hud-autobrake-badge" class="autobrake-badge active">
+          🛑 AUTO-BRAKE
+        </div>
+
+        <!-- Track Tension Mode Button in Drive HUD -->
+        <button id="hud-tension-btn" class="tension-badge" title="Cycle Track Tension: TAUT / REALISTIC / SLACK (T)">
+          ⛓️ <span id="hud-tension-val">REALISTIC</span> <small style="opacity:0.75">(T)</small>
+        </button>
+
+        <!-- Automatic Gearbox Indicator (WASD Auto Transmission) -->
+        <div class="gear-display-auto" title="Load-Sensing Automatic Gearbox">
+          <small>AUTO GEAR</small>
+          <strong id="hud-gear-label">D1</strong>
+        </div>
+
+        <!-- Speed Lock / Cruise Control (Q / E) -->
+        <div class="cruise-cluster">
+          <button id="btn-cc-down" class="cc-btn" title="Decrease Speed Lock / Cruise (Q)">Q</button>
+          <div class="cruise-display">
+            <small>CRUISE</small>
+            <strong id="hud-cc-label">MAN</strong>
+          </div>
+          <button id="btn-cc-up" class="cc-btn" title="Increase Speed Lock / Cruise (E)">E</button>
+        </div>
+      </div>
+    </footer>
+
+    <!-- Notification Toast -->
+    <div id="combat-log"></div>
+
+    <!-- Saved Blueprints Manager Modal -->
+    <div id="modal-blueprint-list" class="blueprint-modal-backdrop hidden">
+      <div class="blueprint-modal-box">
+        <div class="blueprint-modal-header">
+          <h3>📁 BLUEPRINTS IN PROJECT FOLDER</h3>
+          <button id="btn-close-blueprint-modal" class="modal-close-btn">&times;</button>
+        </div>
+        <p class="modal-subtitle">บันทึกลงโฟลเดอร์: <code>blueprints/</code> ในโปรเจกต์ของคุณโดยตรง</p>
+        <div id="blueprint-file-list" class="blueprint-file-list">
+          <div class="blueprint-loading" style="padding:15px; text-align:center; color:var(--text-muted);">กำลังโหลดรายชื่อไฟล์...</div>
+        </div>
+        <div class="blueprint-modal-footer">
+          <button id="btn-modal-refresh" class="tool-btn">🔄 รีเฟรช</button>
+          <button id="btn-modal-close" class="tool-btn">ปิด</button>
+        </div>
+      </div>
+    </div>
+
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
